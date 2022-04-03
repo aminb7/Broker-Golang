@@ -18,7 +18,7 @@ func (c *Client) readInputMessage() string {
 	return message
 }
 
-func (c *Client) Run() {
+func (c *Client) HandleRequest() {
 	for {
 		// Connect
 		var err error
@@ -41,11 +41,43 @@ func (c *Client) Run() {
 				fmt.Println("Received Message: " + string(buffer))
 			}
 		}()
-		// time.Sleep(200 * time.Millisecond)
+
 	}
+}
+
+func (c *Client) HandleResponse() {
+	link, _ := net.Listen("tcp", "127.0.0.1:12344")
+	defer link.Close()
+
+	for {
+		conn, _ := link.Accept()
+		defer conn.Close()
+
+		buffer := make([]byte, 64)
+
+		_, err := conn.Read(buffer)
+		if err == nil {
+			fmt.Println("Received Message: " + string(buffer))
+			conn.Write([]byte("Client Ack: " + string(buffer)))
+		}
+	}
+}
+
+func (c *Client) Run() {
+	go c.HandleRequest()
+	go c.HandleResponse()
 }
 
 func main() {
 	client := Client{}
 	client.Run()
+
+	signalChan := make(chan os.Signal)
+	forever := make(chan bool)
+	go func() {
+		<-signalChan
+		forever <- true
+	}()
+
+	<-forever
 }

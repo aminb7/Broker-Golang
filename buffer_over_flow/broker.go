@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 )
 
-const bufferSize = 10
+const bufferSize = 3
 
 type Broker struct {
 }
@@ -29,11 +30,14 @@ func (b *Broker) HandleClientSide(requestChan, ackChan chan string) {
 				ackMessage := <-ackChan
 				conn.Write([]byte(ackMessage))
 			}()
+		} else {
+			fmt.Println("Queue is full")
 		}
 	}
 }
 
 func (b *Broker) HandleServerSide(requestChan, ackChan chan string) {
+	time.Sleep(50 * time.Second)
 	for {
 		request := <-requestChan
 
